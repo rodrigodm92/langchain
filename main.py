@@ -1,23 +1,17 @@
 ﻿import httpx
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 BASE_URL = "http://127.0.0.1:1234/v1/"
 MODEL = "qwen2.5-coder-7b-instruct"
 
-numero_dias = 7
-numero_criancas = 2
-atividade = "praia"
-
-modelo_de_prompt = PromptTemplate(
+prompt_cidade = PromptTemplate(
     template="""
-    Crie um roteiro de viagem de {dias} dias para uma familia com {numero_criancas} criancas que gosta de {atividade}.
-    """
+    Sugira uma cidade dado o meu interesse por {interesse}.
+    """,
+    input_variables=["interesse"]
 )
-
-prompt = modelo_de_prompt.format(dias=numero_dias, numero_criancas=numero_criancas, atividade=atividade)
-
-print("Prompt: \n", prompt)
 
 modelo = ChatOpenAI(
     model=MODEL,
@@ -30,5 +24,11 @@ modelo = ChatOpenAI(
     temperature=0.5,
 )
 
-resposta = modelo.invoke(prompt)
-print(resposta.content)
+cadeia = prompt_cidade | modelo | StrOutputParser()
+
+resposta = cadeia.invoke(
+    {
+        "interesse" : "praia"
+    }
+)
+print(resposta)
