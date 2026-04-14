@@ -1,9 +1,5 @@
-import os
-os.environ["HF_HUB_OFFLINE"] = "1"
-
 import httpx
-from langchain_openai import ChatOpenAI
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -11,8 +7,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 BASE_URL = "http://127.0.0.1:1234/v1/"
-MODEL = "qwen2.5-coder-3b-instruct"
-EMBEDDING_MODEL = "BAAI/bge-m3"
+MODEL = "qwen2.5-coder-7b-instruct"
+EMBEDDING_MODEL = "text-embedding-nomic-embed-text-v1.5"
 
 modelo = ChatOpenAI(
     model=MODEL,
@@ -23,18 +19,19 @@ modelo = ChatOpenAI(
     temperature=0.5,
 )
 
-embeddings = HuggingFaceEmbeddings(
-    model_name=EMBEDDING_MODEL,
-    model_kwargs={"device": "cpu"},
-    encode_kwargs={"normalize_embeddings": True},
+embeddings = OpenAIEmbeddings(
+    model=EMBEDDING_MODEL,
+    base_url=BASE_URL,
+    api_key="lm-studio",
+    http_client=httpx.Client(trust_env=False),
+    http_async_client=httpx.AsyncClient(trust_env=False),
+    check_embedding_ctx_length=False,
 )
 
-_DIR = os.path.dirname(os.path.abspath(__file__))
-
 arquivos = [
-    os.path.join(_DIR, "documentos", "GTB_standard_Nov23.pdf"),
-    os.path.join(_DIR, "documentos", "GTB_gold_Nov23.pdf"),
-    os.path.join(_DIR, "documentos", "GTB_platinum_Nov23.pdf"),
+    r"documentos\GTB_standard_Nov23.pdf",
+    r"documentos\GTB_gold_Nov23.pdf",
+    r"documentos\GTB_platinum_Nov23.pdf"
 ]
 
 documentos = sum(
@@ -65,4 +62,4 @@ def responder(pergunta:str):
         "query": pergunta, "contexto":contexto
     })
 
-print(responder("Como devo proceder caso tenha um item comprado roubado e caso eu tenha o cartão platinum?"))
+print(responder("Como devo proceder caso tenha um item comprado roubado e caso eu tenha o cartão gold?"))
